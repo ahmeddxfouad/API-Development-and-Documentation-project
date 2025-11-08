@@ -1,8 +1,10 @@
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import random
-
-from backend.models import Category, setup_db, db, Question
+try:
+    from backend.models import db, Question, Category, setup_db
+except ImportError:
+    from models import db, Question, Category, setup_db
 
 QUESTIONS_PER_PAGE = 10
 
@@ -88,8 +90,9 @@ def create_app(test_config=None):
             db.session.rollback()
             abort(422)
 
-    # POST create a question
+    # POST create and search a question
     @app.route('/questions', methods=['POST'])
+    @app.route('/questions/search', methods=['POST'])
     def create_or_search_questions():
         body = request.get_json() or {}
 
