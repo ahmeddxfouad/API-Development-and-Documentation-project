@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# API-Development-and-Documentation-project
-=======
 # API Development and Documentation Final Project
 
 ## Trivia App
