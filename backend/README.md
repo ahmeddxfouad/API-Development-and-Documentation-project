@@ -1,104 +1,140 @@
-# Backend - Trivia API
+# Backend – Trivia API (Flask)
 
-## Setting up the Backend
+A lightweight Flask + SQLAlchemy backend for the Trivia game. It serves categories, questions (with pagination), search, deletion, and quiz play.
 
-### Install Dependencies
+---
 
-1. **Python 3.7** - Follow instructions to install the latest version of python for your platform in the [python docs](https://docs.python.org/3/using/unix.html#getting-and-installing-the-latest-version-of-python)
+## Requirements
 
-2. **Virtual Environment** - We recommend working within a virtual environment whenever using Python for projects. This keeps your dependencies for each project separate and organized. Instructions for setting up a virual environment for your platform can be found in the [python docs](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
+- Python **3.10+**
+- PostgreSQL **12+**
+- `pip`, `virtualenv` (recommended)
 
-3. **PIP Dependencies** - Once your virtual environment is setup and running, install the required dependencies by navigating to the `/backend` directory and running:
+---
 
-```bash
-pip install -r requirements.txt
-```
+## Quick Start
 
-#### Key Pip Dependencies
+### 1) Environment
 
-- [Flask](http://flask.pocoo.org/) is a lightweight backend microservices framework. Flask is required to handle requests and responses.
+From the `backend/` folder, create and activate a virtual environment:
 
-- [SQLAlchemy](https://www.sqlalchemy.org/) is the Python SQL toolkit and ORM we'll use to handle the lightweight SQL database. You'll primarily work in `app.py`and can reference `models.py`.
+- Linux/macOS: `python3 -m venv env && source env/bin/activate`
+- Windows (PowerShell): `py -m venv env; .\env\Scripts\Activate.ps1`
 
-- [Flask-CORS](https://flask-cors.readthedocs.io/en/latest/#) is the extension we'll use to handle cross-origin requests from our frontend server.
+Install dependencies:
 
-### Set up the Database
+- `pip install -r requirements.txt`
 
-With Postgres running, create a `trivia` database:
+Set environment variables (use a `.env` in `backend/` or export them in your shell):
 
-```bash
-createdb trivia
-```
+- `DATABASE_URL` (dev DB, e.g. `postgresql://postgres:postgres@127.0.0.1:5432/trivia`)
+- `DATABASE_URL_TEST` (test DB, e.g. `postgresql://postgres:postgres@127.0.0.1:5432/trivia_test`)
 
-Populate the database using the `trivia.psql` file provided. From the `backend` folder in terminal run:
+> Tip: Don’t commit secrets. `.env` is supported via **python-dotenv** and Flask.
 
-```bash
-psql trivia < trivia.psql
-```
+### 2) Databases
 
-### Run the Server
+Create and seed databases (adjust user/host as needed):
 
-From within the `./src` directory first ensure you are working using your created virtual environment.
+- Create dev DB: `createdb trivia`
+- Create test DB: `createdb trivia_test`
+- Seed dev DB (optional): from `backend/`, run `psql trivia < trivia.psql`
 
-To run the server, execute:
+### 3) Run the Dev Server (from `backend/`)
 
-```bash
-flask run --reload
-```
+- Linux/macOS: `FLASK_APP=flaskr flask run`
+- Windows (PowerShell): `$env:FLASK_APP="flaskr"; flask run`
 
-The `--reload` flag will detect file changes and restart the server automatically.
+API base: **http://127.0.0.1:5000**
 
-## To Do Tasks
+---
 
-These are the files you'd want to edit in the backend:
+## API Overview
 
-1. `backend/flaskr/__init__.py`
-2. `backend/test_flaskr.py`
+All responses are JSON. CORS is enabled for `*`. Pagination size: **10**.
 
-One note before you delve into your tasks: for each endpoint, you are expected to define the endpoint and response data. The frontend will be a plentiful resource because it is set up to expect certain endpoints and response data formats already. You should feel free to specify endpoints in your own way; if you do so, make sure to update the frontend or you will get some unexpected behavior.
+### `GET /categories`
+Returns a map of category IDs to names.
 
-1. Use Flask-CORS to enable cross-domain requests and set response headers.
-2. Create an endpoint to handle `GET` requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, number of total questions, current category, categories.
-3. Create an endpoint to handle `GET` requests for all available categories.
-4. Create an endpoint to `DELETE` a question using a question `ID`.
-5. Create an endpoint to `POST` a new question, which will require the question and answer text, category, and difficulty score.
-6. Create a `POST` endpoint to get questions based on category.
-7. Create a `POST` endpoint to get questions based on a search term. It should return any questions for whom the search term is a substring of the question.
-8. Create a `POST` endpoint to get questions to play the quiz. This endpoint should take a category and previous question parameters and return a random questions within the given category, if provided, and that is not one of the previous questions.
-9. Create error handlers for all expected errors including 400, 404, 422, and 500.
+Response:
+- `{ "success": true, "categories": { "1": "Science", ... } }`
 
-## Documenting your Endpoints
+### `GET /questions?page={number}`
+Returns paginated questions, total count, categories, and current category (null).
 
-You will need to provide detailed documentation of your API endpoints including the URL, request parameters, and the response body. Use the example below as a reference.
+Response fields:
+- `questions`: array of `{ id, question, answer, difficulty, category }`
+- `total_questions`: integer
+- `categories`: same map as `/categories`
+- `current_category`: null
+- `success`: true
 
-### Documentation Example
+### `GET /categories/{id}/questions`
+Returns all questions in a category.
 
-`GET '/api/v1.0/categories'`
+Response fields:
+- `questions`: array
+- `total_questions`: integer
+- `current_category`: category name
+- `success`: true
 
-- Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
-- Request Arguments: None
-- Returns: An object with a single key, `categories`, that contains an object of `id: category_string` key: value pairs.
+### `DELETE /questions/{id}`
+Deletes a question by ID.
 
-```json
-{
-  "1": "Science",
-  "2": "Art",
-  "3": "Geography",
-  "4": "History",
-  "5": "Entertainment",
-  "6": "Sports"
-}
-```
+Response:
+- `{ "success": true, "deleted": id }`
+
+### `POST /questions` (create)
+Create a new question.
+
+Body:
+- `{ "question": str, "answer": str, "difficulty": int, "category": int }`
+
+Response:
+- `{ "success": true, "created": id }` (HTTP 201)
+
+### `POST /questions` (search)
+Search for questions by substring.
+
+Body:
+- `{ "searchTerm": str }`
+
+Response:
+- `{ "success": true, "questions": [...], "total_questions": n, "current_category": null }`
+
+### `POST /quizzes`
+Return a random next question not in `previous_questions`.
+
+Body:
+- `{ "previous_questions": [ids], "quiz_category": { "id": number | 0, "type": "click" | name } }`
+
+Response:
+- `{ "success": true, "question": { ... } | null }`
+
+---
+
+## Error Handling
+
+Errors return JSON with `success: false`, an error code, and a message.
+
+- **400**: `{ "success": false, "error": 400, "message": "bad request" }`
+- **404**: `{ "success": false, "error": 404, "message": "resource not found" }`
+- **422**: `{ "success": false, "error": 422, "message": "unprocessable" }`
+- **500**: `{ "success": false, "error": 500, "message": "internal server error" }`
+
+---
 
 ## Testing
 
-Write at least one test for the success and at least one error behavior of each endpoint using the unittest library.
+- Ensure `DATABASE_URL_TEST` points to your test DB (e.g. `trivia_test`).
+- (Optional) Seed test DB if needed: `psql trivia_test < trivia.psql`
+- From `backend/`, run: `python -m unittest test_flaskr.py`
+- Tests will reset the schema and seed minimal data automatically.
 
-To deploy the tests, run
+---
 
-```bash
-dropdb trivia_test
-createdb trivia_test
-psql trivia_test < trivia.psql
-python test_flaskr.py
-```
+## Notes
+
+- **Env-first config**: the app reads `DATABASE_URL` and `DATABASE_URL_TEST`.
+- Keep secrets out of version control.
+- If you change endpoint shapes, update the frontend accordingly (`frontend/`).
