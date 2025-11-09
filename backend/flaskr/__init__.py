@@ -1,6 +1,8 @@
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import random
+from dotenv import load_dotenv
+
 try:
     from backend.models import db, Question, Category, setup_db
 except ImportError:
@@ -8,6 +10,8 @@ except ImportError:
 
 QUESTIONS_PER_PAGE = 10
 
+# Load .env when the app module is imported
+load_dotenv()
 
 def paginate_questions(request, selection):
     page = request.args.get('page', 1, type=int)
@@ -31,6 +35,7 @@ def create_app(test_config=None):
     else:
         database_path = test_config.get('SQLALCHEMY_DATABASE_URI')
         setup_db(app, database_path=database_path)
+        app.config.update(test_config)
 
     with app.app_context():
         db.create_all()
@@ -131,19 +136,6 @@ def create_app(test_config=None):
             db.session.rollback()
             abort(422)
 
-    # POST search questions
-    # @app.route('/questions/search', methods=['POST'])
-    # def search_questions():
-    #     body = request.get_json() or {}
-    #     term = body.get('searchTerm', '')
-    #
-    #     selection = Question.query.filter(Question.question.ilike(f"%{term}%")).order_by(Question.id).all()
-    #     current_questions = [q.format() for q in selection]
-    #
-    #     return jsonify({
-    #         'success': True,
-    #         'questions': current_questions
-    #     })
 
     # GET questions by category id
     @app.route('/categories/<int:category_id>/questions', methods=['GET'])

@@ -1,20 +1,27 @@
 from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
-database_name = 'trivia'
-database_user = 'postgres'
-database_password = 'postgres'
-database_host = 'localhost:5432'
-database_path = f'postgresql://{database_user}:{database_password}@{database_host}/{database_name}'
+import os
 
 db = SQLAlchemy()
 
-"""
-setup_db(app)
-    binds a flask application and a SQLAlchemy service
-"""
-def setup_db(app, database_path=database_path):
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_path
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+def resolve_database_uri(testing: bool) -> str:
+    return os.getenv("DATABASE_URL_TEST") if testing else os.getenv("DATABASE_URL")
+
+
+def setup_db(app, database_path: str | None = None) -> None:
+    """
+    Bind a Flask app to SQLAlchemy. If database_path is provided, use it.
+    Otherwise, resolve from environment (testing vs normal).
+    """
+    testing = bool(app.config.get("TESTING"))
+    uri = database_path or resolve_database_uri(testing)
+    if not uri:
+        raise RuntimeError(
+            "No database URI set. Define DATABASE_URL (and DATABASE_URL_TEST for tests)."
+        )
+    app.config["SQLALCHEMY_DATABASE_URI"] = uri
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.app = app
     db.init_app(app)
 
 """

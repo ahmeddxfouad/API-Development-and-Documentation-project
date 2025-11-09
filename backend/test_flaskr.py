@@ -1,6 +1,7 @@
 import os
 import json
 import unittest
+from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import text
 
 try:
@@ -10,19 +11,14 @@ except ImportError:
     from flaskr import create_app
     from models import db, Question, Category, setup_db
 
-
-def get_test_db_uri():
-    # Override with: export DATABASE_URL_TEST="postgresql://user:pass@host:port/trivia_test"
-    return os.getenv(
-        "DATABASE_URL_TEST",
-        "postgresql://postgres:postgres@localhost:5432/trivia_test"
-    )
+# Load .env.test first (overrides), then .env as fallback
+load_dotenv(find_dotenv(".env.test"), override=True)
+load_dotenv(find_dotenv(".env"), override=False)
 
 
 class TriviaTestCase(unittest.TestCase):
     def setUp(self):
         self.app = create_app({
-            "SQLALCHEMY_DATABASE_URI": get_test_db_uri(),
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
             "TESTING": True
         })
